@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barbell Plate Calculator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for Inter font and general body styling */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top for better scrolling on small screens */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 1rem; /* Rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+            max-width: 600px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        input[type="number"],
+        input[type="text"] {
+            border: 1px solid #cbd5e0; /* Light gray border */
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            font-size: 1rem;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        input[type="number"]:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #3b82f6; /* Blue focus border */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); /* Light blue shadow */
+        }
+        button {
+            background-color: #3b82f6; /* Blue button */
+            color: #ffffff;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        button:hover {
+            background-color: #2563eb; /* Darker blue on hover */
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        .result-box {
+            background-color: #e2e8f0; /* Lighter blue-gray for results */
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            font-size: 1.1rem;
+            color: #2d3748; /* Darker text */
+            line-height: 1.6;
+        }
+        .error-message {
+            color: #ef4444; /* Red for errors */
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        .plate-item {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #60a5fa; /* Medium blue for plates */
+            color: white;
+            border-radius: 9999px; /* Fully rounded */
+            padding: 0.5rem 1rem;
+            margin: 0.25rem;
+            font-weight: 600;
+            min-width: 40px;
+            text-align: center;
+        }
+        .plate-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .plate-selector-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            background-color: #f8fafc;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+        }
+        .plate-selector-row label {
+            font-weight: 500;
+            color: #4a5568;
+            flex-grow: 1;
+        }
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .quantity-button {
+            background-color: #a0aec0; /* Gray button */
+            color: white;
+            border-radius: 0.25rem;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .quantity-button:hover {
+            background-color: #718096; /* Darker gray on hover */
+        }
+        .quantity-input {
+            width: 50px;
+            text-align: center;
+            -moz-appearance: textfield; /* Firefox */
+            appearance: textfield; /* Other browsers */
+        }
+        .quantity-input::-webkit-outer-spin-button,
+        .quantity-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* Collapsible Section Styles */
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #e2e8f0; /* Lighter blue-gray for header */
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #2d3748;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .collapsible-header:hover {
+            background-color: #cbd5e0;
+        }
+        .collapsible-icon {
+            transition: transform 0.3s ease-in-out;
+        }
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
+            padding: 0 1rem; /* Initial padding, will expand */
+        }
+        .collapsible-content.expanded {
+            max-height: 500px; /* Adjust based on expected content height */
+            padding: 1rem; /* Expanded padding */
+        }
+        .collapsible-icon.rotated {
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Barbell Plate Calculator</h1>
+
+        <!-- Input Section -->
+        <div class="input-group">
+            <label for="targetWeight" class="block text-gray-700 text-sm font-semibold mb-2">Target Weight (kg):</label>
+            <input type="number" id="targetWeight" placeholder="e.g., 100" class="w-full" min="0" value="60">
+        </div>
+
+        <div class="input-group">
+            <label for="barbellWeight" class="block text-gray-700 text-sm font-semibold mb-2">Barbell Weight (kg):</label>
+            <input type="number" id="barbellWeight" placeholder="e.g., 20" class="w-full" min="0" value="20">
+        </div>
+
+        <div class="input-group">
+            <div id="plateInventoryHeader" class="collapsible-header">
+                <span>Available Plates (Total Inventory)</span>
+                <span id="collapsibleIcon" class="collapsible-icon">&#9658;</span> <!-- Right-pointing triangle -->
+            </div>
+            <div id="plateInventoryCollapsibleContent" class="collapsible-content">
+                <div id="plateInventorySection" class="border border-gray-300 rounded-lg p-4">
+                    <!-- Plate selectors will be dynamically inserted here by JavaScript -->
+                </div>
+                <p class="text-gray-500 text-xs mt-1">Adjust the quantity of each plate you own. The calculator will ensure symmetrical loading.</p>
+            </div>
+        </div>
+
+        <button id="calculateBtn">Calculate Plates</button>
+
+        <!-- Result Section -->
+        <div id="result" class="result-box hidden">
+            <h2 class="text-xl font-semibold text-gray-800 mb-3">Result:</h2>
+            <p id="totalWeightAchieved" class="mb-2"></p>
+            <p id="platesPerSide"></p>
+            <div id="plateBreakdown" class="plate-list"></div>
+            <p id="errorMessage" class="error-message"></p>
+        </div>
+
+        <!-- Message Box for alerts -->
+        <div id="messageBox" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden z-50">
+            <div class="bg-white p-8 rounded-lg shadow-xl max-w-sm w-full text-center">
+                <h3 id="messageBoxTitle" class="text-xl font-bold mb-4 text-gray-800"></h3>
+                <p id="messageBoxContent" class="text-gray-700 mb-6"></p>
+                <button id="messageBoxCloseBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg">OK</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Get references to HTML elements
+        const targetWeightInput = document.getElementById('targetWeight');
+        const barbellWeightInput = document.getElementById('barbellWeight');
+        const plateInventorySection = document.getElementById('plateInventorySection');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resultDiv = document.getElementById('result');
+        const totalWeightAchievedSpan = document.getElementById('totalWeightAchieved');
+        const platesPerSideSpan = document.getElementById('platesPerSide');
+        const plateBreakdownDiv = document.getElementById('plateBreakdown');
+        const errorMessageSpan = document.getElementById('errorMessage');
+
+        // Message box elements
+        const messageBox = document.getElementById('messageBox');
+        const messageBoxTitle = document.getElementById('messageBoxTitle');
+        const messageBoxContent = document.getElementById('messageBoxContent');
+        const messageBoxCloseBtn = document.getElementById('messageBoxCloseBtn');
+
+        // Collapsible elements
+        const plateInventoryHeader = document.getElementById('plateInventoryHeader');
+        const plateInventoryCollapsibleContent = document.getElementById('plateInventoryCollapsibleContent');
+        const collapsibleIcon = document.getElementById('collapsibleIcon');
+
+
+        // Define common plate sizes and their initial quantities
+        const COMMON_PLATE_SIZES = [25, 20, 15, 10, 5, 2.5, 1.25, 0.5, 0.25];
+        const plateQuantities = {}; // Stores the current quantity for each plate type
+
+        // Initialize plate quantities (e.g., based on your previous input for 60kg target)
+        // This assumes you have: two 10kg, two 6.5kg, one 5kg, four 2.5kg, two 1.25kg
+        plateQuantities['10'] = 2;
+        plateQuantities['6.5'] = 2;
+        plateQuantities['5'] = 1;
+        plateQuantities['2.5'] = 4;
+        plateQuantities['1.25'] = 2;
+        // Initialize others to 0 if not explicitly set
+        COMMON_PLATE_SIZES.forEach(size => {
+            if (plateQuantities[size] === undefined) {
+                plateQuantities[size] = 0;
+            }
+        });
+
+
+        /**
+         * Displays a custom message box instead of alert().
+         * @param {string} title - The title of the message box.
+         * @param {string} message - The content message.
+         */
+        function showMessageBox(title, message) {
+            messageBoxTitle.textContent = title;
+            messageBoxContent.textContent = message;
+            messageBox.classList.remove('hidden');
+        }
+
+        // Close message box when OK button is clicked
+        messageBoxCloseBtn.addEventListener('click', () => {
+            messageBox.classList.add('hidden');
+        });
+
+        /**
+         * Renders the plate quantity selectors in the UI.
+         */
+        function renderPlateSelectors() {
+            plateInventorySection.innerHTML = ''; // Clear previous selectors
+
+            COMMON_PLATE_SIZES.forEach(plateSize => {
+                const row = document.createElement('div');
+                row.classList.add('plate-selector-row');
+
+                const label = document.createElement('label');
+                label.textContent = `${plateSize} kg:`;
+                row.appendChild(label);
+
+                const controls = document.createElement('div');
+                controls.classList.add('quantity-controls');
+
+                const decrementBtn = document.createElement('button');
+                decrementBtn.classList.add('quantity-button');
+                decrementBtn.textContent = '-';
+                decrementBtn.addEventListener('click', () => {
+                    if (plateQuantities[plateSize] > 0) {
+                        plateQuantities[plateSize]--;
+                        quantityInput.value = plateQuantities[plateSize];
+                    }
+                });
+                controls.appendChild(decrementBtn);
+
+                const quantityInput = document.createElement('input');
+                quantityInput.type = 'number';
+                quantityInput.min = '0';
+                quantityInput.value = plateQuantities[plateSize] || 0; // Use stored quantity or 0
+                quantityInput.classList.add('quantity-input');
+                quantityInput.addEventListener('change', (event) => {
+                    let value = parseInt(event.target.value);
+                    if (isNaN(value) || value < 0) {
+                        value = 0;
+                    }
+                    plateQuantities[plateSize] = value;
+                    event.target.value = value; // Ensure input reflects valid number
+                });
+                controls.appendChild(quantityInput);
+
+                const incrementBtn = document.createElement('button');
+                incrementBtn.classList.add('quantity-button');
+                incrementBtn.textContent = '+';
+                incrementBtn.addEventListener('click', () => {
+                    plateQuantities[plateSize]++;
+                    quantityInput.value = plateQuantities[plateSize];
+                });
+                controls.appendChild(incrementBtn);
+
+                row.appendChild(controls);
+                plateInventorySection.appendChild(row);
+            });
+        }
+
+        /**
+         * Gathers the available plates from the UI selectors into a flat array.
+         * @returns {number[]} An array of all individual plate weights.
+         */
+        function getAvailablePlatesFromSelectors() {
+            const availablePlates = [];
+            for (const size in plateQuantities) {
+                if (plateQuantities.hasOwnProperty(size)) {
+                    for (let i = 0; i < plateQuantities[size]; i++) {
+                        availablePlates.push(parseFloat(size));
+                    }
+                }
+            }
+            return availablePlates;
+        }
+
+        /**
+         * Calculates the optimal plates for a given target weight,
+         * considering the total available quantity of each plate for symmetrical loading.
+         * @param {number} targetWeight - The desired total weight.
+         * @param {number} barbellWeight - The weight of the barbell.
+         * @param {number[]} availablePlates - An array of all available plate weights (e.g., [10, 10, 5]).
+         * @returns {object|null} An object containing the plates per side and total weight, or null if impossible.
+         */
+        function calculatePlates(targetWeight, barbellWeight, availablePlates) {
+            // Create a mutable inventory from the available plates
+            const fullPlateInventory = {};
+            availablePlates.forEach(p => {
+                fullPlateInventory[p] = (fullPlateInventory[p] || 0) + 1;
+            });
+
+            // Get unique plate types and sort them in descending order
+            const sortedUniquePlates = Object.keys(fullPlateInventory)
+                                           .map(Number)
+                                           .sort((a, b) => b - a);
+
+            const weightPerSideTarget = (targetWeight - barbellWeight) / 2;
+
+            if (weightPerSideTarget < 0) {
+                return {
+                    plates: [],
+                    totalAchieved: barbellWeight,
+                    message: "Target weight is less than or equal to the barbell weight. No plates needed or invalid target."
+                };
+            }
+            if (weightPerSideTarget === 0) {
+                return {
+                    plates: [],
+                    totalAchieved: barbellWeight,
+                    message: "Target weight equals barbell weight. No plates needed."
+                };
+            }
+
+            let currentWeightOnSide = 0;
+            const platesUsedOnOneSide = [];
+            const tempInventory = { ...fullPlateInventory }; // Use a temporary inventory for calculation
+
+            for (const plate of sortedUniquePlates) {
+                // We need at least 2 of this plate to put one on each side for symmetrical loading
+                while (tempInventory[plate] >= 2 && (currentWeightOnSide + plate <= weightPerSideTarget + 0.001)) {
+                    currentWeightOnSide += plate;
+                    platesUsedOnOneSide.push(plate);
+                    tempInventory[plate] -= 2; // Decrement by 2 as one is used on each side
+                }
+            }
+
+            const totalAchieved = barbellWeight + (currentWeightOnSide * 2);
+            const difference = Math.abs(targetWeight - totalAchieved);
+            const tolerance = 0.01; // Small tolerance for floating point comparisons
+
+            if (difference > tolerance) {
+                return {
+                    plates: platesUsedOnOneSide,
+                    totalAchieved: totalAchieved,
+                    message: `Could not reach exactly ${targetWeight}kg. Closest possible total weight with available plates is ${totalAchieved.toFixed(2)}kg.`
+                };
+            }
+
+            return {
+                plates: platesUsedOnOneSide,
+                totalAchieved: totalAchieved,
+                message: `Successfully calculated plates for ${targetWeight}kg.`
+            };
+        }
+
+        /**
+         * Event listener for the calculate button.
+         */
+        calculateBtn.addEventListener('click', () => {
+            // Clear previous results and error messages
+            resultDiv.classList.add('hidden');
+            errorMessageSpan.textContent = '';
+            plateBreakdownDiv.innerHTML = '';
+
+            const targetWeight = parseFloat(targetWeightInput.value);
+            const barbellWeight = parseFloat(barbellWeightInput.value);
+            const availablePlates = getAvailablePlatesFromSelectors(); // Get plates from new UI
+
+            // Input validation
+            if (isNaN(targetWeight) || targetWeight <= 0) {
+                showMessageBox("Input Error", "Please enter a valid positive number for Target Weight.");
+                return;
+            }
+            if (isNaN(barbellWeight) || barbellWeight < 0) {
+                showMessageBox("Input Error", "Please enter a valid non-negative number for Barbell Weight.");
+                return;
+            }
+
+            if (availablePlates.length === 0) {
+                showMessageBox("Input Error", "Please specify the quantity of your available plates.");
+                return;
+            }
+
+            // Perform calculation
+            const result = calculatePlates(targetWeight, barbellWeight, availablePlates);
+
+            // Display results
+            resultDiv.classList.remove('hidden');
+            totalWeightAchievedSpan.textContent = `Total Weight Achieved: ${result.totalAchieved.toFixed(2)}kg`;
+
+            if (result.plates.length === 0 && result.totalAchieved === barbellWeight) {
+                platesPerSideSpan.textContent = "No plates needed.";
+                plateBreakdownDiv.innerHTML = ''; // Ensure no plates are shown
+            } else if (result.plates.length === 0 && result.totalAchieved < barbellWeight) {
+                 platesPerSideSpan.textContent = "Target weight is less than or equal to the barbell weight. No plates needed.";
+                 plateBreakdownDiv.innerHTML = '';
+            }
+            else {
+                // Count plate occurrences for display on one side
+                const plateCounts = {};
+                result.plates.forEach(plate => {
+                    plateCounts[plate] = (plateCounts[plate] || 0) + 1;
+                });
+
+                // Display plates per side
+                platesPerSideSpan.textContent = `Plates per side (${(result.totalAchieved - barbellWeight) / 2}kg per side):`;
+
+                // Display plate breakdown visually
+                plateBreakdownDiv.innerHTML = ''; // Clear previous plates
+                const sortedUniquePlatesForDisplay = Object.keys(plateCounts).map(Number).sort((a, b) => b - a);
+                sortedUniquePlatesForDisplay.forEach(plate => {
+                    const count = plateCounts[plate];
+                    const plateText = `${plate}kg x ${count}`;
+                    const plateElement = document.createElement('span');
+                    plateElement.classList.add('plate-item');
+                    plateElement.textContent = plateText;
+                    plateBreakdownDiv.appendChild(plateElement);
+                });
+            }
+
+            // Display any messages from the calculation logic
+            if (result.message && result.message.includes("Could not reach exactly")) {
+                errorMessageSpan.textContent = result.message;
+            } else if (result.message && result.message.includes("No plates needed")) {
+                errorMessageSpan.textContent = result.message;
+            }
+        });
+
+        // Collapsible functionality
+        plateInventoryHeader.addEventListener('click', () => {
+            const isExpanded = plateInventoryCollapsibleContent.classList.toggle('expanded');
+            collapsibleIcon.classList.toggle('rotated', isExpanded);
+        });
+
+        // Initial rendering of plate selectors and calculation on load
+        document.addEventListener('DOMContentLoaded', () => {
+            renderPlateSelectors();
+            calculateBtn.click();
+            // Optionally, expand the section by default on load if desired:
+            // plateInventoryCollapsibleContent.classList.add('expanded');
+            // collapsibleIcon.classList.add('rotated');
+        });
+    </script>
+</body>
+</html>
