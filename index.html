@@ -48,22 +48,24 @@
             box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.25); /* Light blue shadow */
         }
         button {
-            background-color: #4299e1; /* Blue button */
-            color: #ffffff;
-            padding: 0.75rem 1.5rem;
+            background-color: #A7D9FF; /* Even lighter, more vibrant blue for the button */
+            color: #1a202c; /* Dark text for contrast */
+            padding: 1rem 2rem; /* Increased padding for larger button */
             border-radius: 0.5rem;
-            font-weight: 600;
+            font-weight: 700; /* Bolder text */
+            font-size: 1.125rem; /* Slightly larger font */
             cursor: pointer;
-            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Darker shadow */
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); /* More prominent shadow in default state */
         }
         button:hover {
-            background-color: #3182ce; /* Darker blue on hover */
-            transform: translateY(-1px);
+            background-color: #63b3ed; /* Slightly darker light blue on hover */
+            transform: translateY(-2px); /* Lift effect */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); /* Even more prominent shadow on hover */
         }
         button:active {
             transform: translateY(0);
-            box-shadow: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
         .result-box {
             background-color: #28303d; /* Even darker for results box */
@@ -73,6 +75,12 @@
             font-size: 1.1rem;
             color: #cbd5e0; /* Lighter text */
             line-height: 1.6;
+        }
+        .result-box h2 { /* Targeting the result heading */
+            color: #63b3ed; /* Vibrant blue for the result heading */
+            font-weight: 700; /* Make it bolder */
+            font-size: 1.5rem; /* Slightly larger font for clarity */
+            margin-bottom: 0.75rem; /* Adjust margin for spacing */
         }
         .error-message {
             color: #fc8181; /* Lighter red for errors */
@@ -221,12 +229,12 @@
         <!-- Input Section -->
         <div class="input-group">
             <label for="targetWeight" class="block text-blue-200 text-sm font-semibold mb-2">Target Weight (kg):</label>
-            <input type="number" id="targetWeight" placeholder="e.g., 100" class="w-full" min="0" value="20">
+            <input type="number" id="targetWeight" placeholder="e.g., 100" class="w-full" min="0" value="60">
         </div>
 
         <div class="input-group">
             <label for="barbellWeight" class="block text-blue-200 text-sm font-semibold mb-2">Barbell Weight (kg):</label>
-            <input type="number" id="barbellWeight" placeholder="e.g., 20" class="w-full" min="0" value="2">
+            <input type="number" id="barbellWeight" placeholder="e.g., 20" class="w-full" min="0" value="20">
         </div>
 
         <div class="input-group">
