@@ -220,6 +220,53 @@
         #messageBoxCloseBtn:hover {
             background-color: #3182ce; /* Darker blue on hover */
         }
+
+        /* New styles for remove button and add plate section */
+        .remove-button {
+            background-color: #e53e3e; /* Red for remove */
+            color: white;
+            border-radius: 0.25rem;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            margin-left: 0.5rem; /* Spacing from quantity controls */
+        }
+        .remove-button:hover {
+            background-color: #c53030; /* Darker red on hover */
+        }
+        .add-plate-section {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #4a5568; /* Separator line */
+        }
+        .add-plate-input {
+            flex-grow: 1;
+            border: 1px solid #4a5568;
+            background-color: #2d3748;
+            color: #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+        }
+        .add-plate-button {
+            background-color: #48bb78; /* Green for add */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .add-plate-button:hover {
+            background-color: #38a169; /* Darker green on hover */
+        }
     </style>
 </head>
 <body>
@@ -245,6 +292,10 @@
             <div id="plateInventoryCollapsibleContent" class="collapsible-content">
                 <div id="plateInventorySection" class="border border-gray-300 rounded-lg p-4">
                     <!-- Plate selectors will be dynamically inserted here by JavaScript -->
+                </div>
+                <div class="add-plate-section">
+                    <input type="number" id="newPlateWeightInput" class="add-plate-input" placeholder="New plate weight (kg)" min="0.01" step="0.01">
+                    <button id="addNewPlateBtn" class="add-plate-button">Add Plate</button>
                 </div>
                 <p class="text-gray-500 text-xs mt-1">Adjust the quantity of each plate you own. The calculator will ensure symmetrical loading.</p>
             </div>
@@ -295,24 +346,23 @@
         const plateInventoryCollapsibleContent = document.getElementById('plateInventoryCollapsibleContent');
         const collapsibleIcon = document.getElementById('collapsibleIcon');
 
+        // New plate management elements
+        const newPlateWeightInput = document.getElementById('newPlateWeightInput');
+        const addNewPlateBtn = document.getElementById('addNewPlateBtn');
 
-        // Define common plate sizes and their initial quantities
-        const COMMON_PLATE_SIZES = [25, 20, 15, 10, 5, 2.5, 1.25, 0.5, 0.25];
-        const plateQuantities = {}; // Stores the current quantity for each plate type
 
-        // Initialize plate quantities (e.g., based on your previous input for 60kg target)
-        // This assumes you have: two 10kg, two 6.5kg, one 5kg, four 2.5kg, two 1.25kg
-        plateQuantities['10'] = 2;
-        plateQuantities['6.5'] = 2;
-        plateQuantities['5'] = 1;
-        plateQuantities['2.5'] = 4;
-        plateQuantities['1.25'] = 2;
-        // Initialize others to 0 if not explicitly set
-        COMMON_PLATE_SIZES.forEach(size => {
-            if (plateQuantities[size] === undefined) {
-                plateQuantities[size] = 0;
-            }
+        // Stores the current quantity for each plate type. This object will be the source of truth.
+        const plateQuantities = {};
+
+        // Initial plate quantities including 1kg and 2kg
+        // This can be customized to your common plates
+        const initialPlates = [25, 20, 15, 10, 6.5, 5, 2.5, 2.5, 2.5, 2.5, 1.25, 1.25, 2, 1, 0.5, 0.25]; // Added 1kg and 2kg
+        initialPlates.forEach(plate => {
+            plateQuantities[plate] = (plateQuantities[plate] || 0) + 1;
         });
+        // Ensure 1kg and 2kg are explicitly in the list even if quantity is 0 initially
+        if (plateQuantities['1'] === undefined) plateQuantities['1'] = 0;
+        if (plateQuantities['2'] === undefined) plateQuantities['2'] = 0;
 
 
         /**
@@ -337,7 +387,12 @@
         function renderPlateSelectors() {
             plateInventorySection.innerHTML = ''; // Clear previous selectors
 
-            COMMON_PLATE_SIZES.forEach(plateSize => {
+            // Sort plate sizes numerically in descending order
+            const sortedPlateSizes = Object.keys(plateQuantities)
+                                           .map(Number)
+                                           .sort((a, b) => b - a);
+
+            sortedPlateSizes.forEach(plateSize => {
                 const row = document.createElement('div');
                 row.classList.add('plate-selector-row');
 
@@ -362,7 +417,7 @@
                 const quantityInput = document.createElement('input');
                 quantityInput.type = 'number';
                 quantityInput.min = '0';
-                quantityInput.value = plateQuantities[plateSize] || 0; // Use stored quantity or 0
+                quantityInput.value = plateQuantities[plateSize]; // Use stored quantity
                 quantityInput.classList.add('quantity-input');
                 quantityInput.addEventListener('change', (event) => {
                     let value = parseInt(event.target.value);
@@ -382,6 +437,15 @@
                     quantityInput.value = plateQuantities[plateSize];
                 });
                 controls.appendChild(incrementBtn);
+
+                const removeBtn = document.createElement('button');
+                removeBtn.classList.add('remove-button');
+                removeBtn.textContent = 'X'; // Or a trash icon
+                removeBtn.addEventListener('click', () => {
+                    delete plateQuantities[plateSize]; // Remove from inventory
+                    renderPlateSelectors(); // Re-render the list
+                });
+                controls.appendChild(removeBtn);
 
                 row.appendChild(controls);
                 plateInventorySection.appendChild(row);
@@ -552,6 +616,24 @@
             collapsibleIcon.classList.toggle('rotated', isExpanded);
         });
 
+        // Event listener for adding a new plate
+        addNewPlateBtn.addEventListener('click', () => {
+            const newWeight = parseFloat(newPlateWeightInput.value);
+            if (isNaN(newWeight) || newWeight <= 0) {
+                showMessageBox("Input Error", "Please enter a valid positive number for the new plate weight.");
+                return;
+            }
+            // Check if plate already exists, if so, just increment quantity
+            if (plateQuantities[newWeight] !== undefined) {
+                plateQuantities[newWeight]++;
+            } else {
+                plateQuantities[newWeight] = 2; // Add 2 by default for symmetrical loading
+            }
+            newPlateWeightInput.value = ''; // Clear input
+            renderPlateSelectors(); // Re-render the list to include the new plate
+        });
+
+
         // Initial rendering of plate selectors and calculation on load
         document.addEventListener('DOMContentLoaded', () => {
             renderPlateSelectors();
@@ -563,3 +645,6 @@
     </script>
 </body>
 </html>
+
+
+
