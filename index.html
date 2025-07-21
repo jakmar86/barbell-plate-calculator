@@ -354,15 +354,26 @@
         // Stores the current quantity for each plate type. This object will be the source of truth.
         const plateQuantities = {};
 
-        // Initial plate quantities including 1kg and 2kg
-        // This can be customized to your common plates
-        const initialPlates = [25, 20, 15, 10, 6.5, 5, 2.5, 2.5, 2.5, 2.5, 1.25, 1.25, 2, 1, 0.5, 0.25]; // Added 1kg and 2kg
+        // Initial plate quantities including 1kg and 2kg, ensuring pairs for symmetrical loading
+        // This array now explicitly lists pairs for common sizes
+        const initialPlates = [
+            25, 25, // Two 25kg plates
+            20, 20, // Two 20kg plates
+            15, 15, // Two 15kg plates
+            10, 10, // Two 10kg plates
+            6.5, 6.5, // Two 6.5kg plates
+            5, 5, // Two 5kg plates
+            2.5, 2.5, 2.5, 2.5, // Four 2.5kg plates
+            1.25, 1.25, // Two 1.25kg plates
+            2, 2, // Two 2kg plates
+            1, 1, // Two 1kg plates
+            0.5, 0.5, // Two 0.5kg plates
+            0.25, 0.25 // Two 0.25kg plates
+        ];
+
         initialPlates.forEach(plate => {
             plateQuantities[plate] = (plateQuantities[plate] || 0) + 1;
         });
-        // Ensure 1kg and 2kg are explicitly in the list even if quantity is 0 initially
-        if (plateQuantities['1'] === undefined) plateQuantities['1'] = 0;
-        if (plateQuantities['2'] === undefined) plateQuantities['2'] = 0;
 
 
         /**
@@ -469,182 +480,4 @@
         }
 
         /**
-         * Calculates the optimal plates for a given target weight,
-         * considering the total available quantity of each plate for symmetrical loading.
-         * @param {number} targetWeight - The desired total weight.
-         * @param {number} barbellWeight - The weight of the barbell.
-         * @param {number[]} availablePlates - An array of all available plate weights (e.g., [10, 10, 5]).
-         * @returns {object|null} An object containing the plates per side and total weight, or null if impossible.
-         */
-        function calculatePlates(targetWeight, barbellWeight, availablePlates) {
-            // Create a mutable inventory from the available plates
-            const fullPlateInventory = {};
-            availablePlates.forEach(p => {
-                fullPlateInventory[p] = (fullPlateInventory[p] || 0) + 1;
-            });
-
-            // Get unique plate types and sort them in descending order
-            const sortedUniquePlates = Object.keys(fullPlateInventory)
-                                           .map(Number)
-                                           .sort((a, b) => b - a);
-
-            const weightPerSideTarget = (targetWeight - barbellWeight) / 2;
-
-            if (weightPerSideTarget < 0) {
-                return {
-                    plates: [],
-                    totalAchieved: barbellWeight,
-                    message: "Target weight is less than or equal to the barbell weight. No plates needed or invalid target."
-                };
-            }
-            if (weightPerSideTarget === 0) {
-                return {
-                    plates: [],
-                    totalAchieved: barbellWeight,
-                    message: "Target weight equals barbell weight. No plates needed."
-                };
-            }
-
-            let currentWeightOnSide = 0;
-            const platesUsedOnOneSide = [];
-            const tempInventory = { ...fullPlateInventory }; // Use a temporary inventory for calculation
-
-            for (const plate of sortedUniquePlates) {
-                // We need at least 2 of this plate to put one on each side for symmetrical loading
-                while (tempInventory[plate] >= 2 && (currentWeightOnSide + plate <= weightPerSideTarget + 0.001)) {
-                    currentWeightOnSide += plate;
-                    platesUsedOnOneSide.push(plate);
-                    tempInventory[plate] -= 2; // Decrement by 2 as one is used on each side
-                }
-            }
-
-            const totalAchieved = barbellWeight + (currentWeightOnSide * 2);
-            const difference = Math.abs(targetWeight - totalAchieved);
-            const tolerance = 0.01; // Small tolerance for floating point comparisons
-
-            if (difference > tolerance) {
-                return {
-                    plates: platesUsedOnOneSide,
-                    totalAchieved: totalAchieved,
-                    message: `Could not reach exactly ${targetWeight}kg. Closest possible total weight with available plates is ${totalAchieved.toFixed(2)}kg.`
-                };
-            }
-
-            return {
-                plates: platesUsedOnOneSide,
-                totalAchieved: totalAchieved,
-                message: `Successfully calculated plates for ${targetWeight}kg.`
-            };
-        }
-
-        /**
-         * Event listener for the calculate button.
-         */
-        calculateBtn.addEventListener('click', () => {
-            // Clear previous results and error messages
-            resultDiv.classList.add('hidden');
-            errorMessageSpan.textContent = '';
-            plateBreakdownDiv.innerHTML = '';
-
-            const targetWeight = parseFloat(targetWeightInput.value);
-            const barbellWeight = parseFloat(barbellWeightInput.value);
-            const availablePlates = getAvailablePlatesFromSelectors(); // Get plates from new UI
-
-            // Input validation
-            if (isNaN(targetWeight) || targetWeight <= 0) {
-                showMessageBox("Input Error", "Please enter a valid positive number for Target Weight.");
-                return;
-            }
-            if (isNaN(barbellWeight) || barbellWeight < 0) {
-                showMessageBox("Input Error", "Please enter a valid non-negative number for Barbell Weight.");
-                return;
-            }
-
-            if (availablePlates.length === 0) {
-                showMessageBox("Input Error", "Please specify the quantity of your available plates.");
-                return;
-            }
-
-            // Perform calculation
-            const result = calculatePlates(targetWeight, barbellWeight, availablePlates);
-
-            // Display results
-            resultDiv.classList.remove('hidden');
-            totalWeightAchievedSpan.textContent = `Total Weight Achieved: ${result.totalAchieved.toFixed(2)}kg`;
-
-            if (result.plates.length === 0 && result.totalAchieved === barbellWeight) {
-                platesPerSideSpan.textContent = "No plates needed.";
-                plateBreakdownDiv.innerHTML = ''; // Ensure no plates are shown
-            } else if (result.plates.length === 0 && result.totalAchieved < barbellWeight) {
-                 platesPerSideSpan.textContent = "Target weight is less than or equal to the barbell weight. No plates needed.";
-                 plateBreakdownDiv.innerHTML = '';
-            }
-            else {
-                // Count plate occurrences for display on one side
-                const plateCounts = {};
-                result.plates.forEach(plate => {
-                    plateCounts[plate] = (plateCounts[plate] || 0) + 1;
-                });
-
-                // Display plates per side
-                platesPerSideSpan.textContent = `Plates per side (${(result.totalAchieved - barbellWeight) / 2}kg per side):`;
-
-                // Display plate breakdown visually
-                plateBreakdownDiv.innerHTML = ''; // Clear previous plates
-                const sortedUniquePlatesForDisplay = Object.keys(plateCounts).map(Number).sort((a, b) => b - a);
-                sortedUniquePlatesForDisplay.forEach(plate => {
-                    const count = plateCounts[plate];
-                    const plateText = `${plate}kg x ${count}`;
-                    const plateElement = document.createElement('span');
-                    plateElement.classList.add('plate-item');
-                    plateElement.textContent = plateText;
-                    plateBreakdownDiv.appendChild(plateElement);
-                });
-            }
-
-            // Display any messages from the calculation logic
-            if (result.message && result.message.includes("Could not reach exactly")) {
-                errorMessageSpan.textContent = result.message;
-            } else if (result.message && result.message.includes("No plates needed")) {
-                errorMessageSpan.textContent = result.message;
-            }
-        });
-
-        // Collapsible functionality
-        plateInventoryHeader.addEventListener('click', () => {
-            const isExpanded = plateInventoryCollapsibleContent.classList.toggle('expanded');
-            collapsibleIcon.classList.toggle('rotated', isExpanded);
-        });
-
-        // Event listener for adding a new plate
-        addNewPlateBtn.addEventListener('click', () => {
-            const newWeight = parseFloat(newPlateWeightInput.value);
-            if (isNaN(newWeight) || newWeight <= 0) {
-                showMessageBox("Input Error", "Please enter a valid positive number for the new plate weight.");
-                return;
-            }
-            // Check if plate already exists, if so, just increment quantity
-            if (plateQuantities[newWeight] !== undefined) {
-                plateQuantities[newWeight]++;
-            } else {
-                plateQuantities[newWeight] = 2; // Add 2 by default for symmetrical loading
-            }
-            newPlateWeightInput.value = ''; // Clear input
-            renderPlateSelectors(); // Re-render the list to include the new plate
-        });
-
-
-        // Initial rendering of plate selectors and calculation on load
-        document.addEventListener('DOMContentLoaded', () => {
-            renderPlateSelectors();
-            calculateBtn.click();
-            // Optionally, expand the section by default on load if desired:
-            // plateInventoryCollapsibleContent.classList.add('expanded');
-            // collapsibleIcon.classList.add('rotated');
-        });
-    </script>
-</body>
-</html>
-
-
-
+      
