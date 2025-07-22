@@ -352,11 +352,10 @@
 
 
         // Stores the current quantity for each plate type. This object will be the source of truth.
-        const plateQuantities = {};
+        let plateQuantities = {}; // Changed to `let` so it can be reassigned
 
-        // Initial plate quantities including 1kg and 2kg, ensuring pairs for symmetrical loading
-        // This array now explicitly lists pairs for common sizes
-        const initialPlates = [
+        // Define a default set of initial plates (pairs for symmetrical loading)
+        const DEFAULT_INITIAL_PLATES = [
             25, 25, // Two 25kg plates
             20, 20, // Two 20kg plates
             15, 15, // Two 15kg plates
@@ -371,10 +370,47 @@
             0.25, 0.25 // Two 0.25kg plates
         ];
 
-        initialPlates.forEach(plate => {
-            plateQuantities[plate] = (plateQuantities[plate] || 0) + 1;
-        });
+        /**
+         * Initializes plateQuantities from localStorage or defaults.
+         */
+        function initializePlateQuantities() {
+            const savedQuantities = localStorage.getItem('barbellPlateQuantities');
+            if (savedQuantities) {
+                try {
+                    // Parse the saved data. Convert keys back to numbers.
+                    const parsed = JSON.parse(savedQuantities);
+                    plateQuantities = {};
+                    for (const key in parsed) {
+                        if (parsed.hasOwnProperty(key)) {
+                            plateQuantities[parseFloat(key)] = parsed[key];
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error parsing plate quantities from localStorage:", e);
+                    // Fallback to default if parsing fails
+                    setupDefaultPlateQuantities();
+                }
+            } else {
+                setupDefaultPlateQuantities();
+            }
+        }
 
+        /**
+         * Sets up the default plate quantities.
+         */
+        function setupDefaultPlateQuantities() {
+            plateQuantities = {}; // Clear any existing quantities
+            DEFAULT_INITIAL_PLATES.forEach(plate => {
+                plateQuantities[plate] = (plateQuantities[plate] || 0) + 1;
+            });
+        }
+
+        /**
+         * Saves the current plateQuantities to localStorage.
+         */
+        function savePlateQuantities() {
+            localStorage.setItem('barbellPlateQuantities', JSON.stringify(plateQuantities));
+        }
 
         /**
          * Displays a custom message box instead of alert().
@@ -421,6 +457,7 @@
                     if (plateQuantities[plateSize] > 0) {
                         plateQuantities[plateSize]--;
                         quantityInput.value = plateQuantities[plateSize];
+                        savePlateQuantities(); // Save on change
                     }
                 });
                 controls.appendChild(decrementBtn);
@@ -437,6 +474,7 @@
                     }
                     plateQuantities[plateSize] = value;
                     event.target.value = value; // Ensure input reflects valid number
+                    savePlateQuantities(); // Save on change
                 });
                 controls.appendChild(quantityInput);
 
@@ -446,6 +484,7 @@
                 incrementBtn.addEventListener('click', () => {
                     plateQuantities[plateSize]++;
                     quantityInput.value = plateQuantities[plateSize];
+                    savePlateQuantities(); // Save on change
                 });
                 controls.appendChild(incrementBtn);
 
@@ -454,6 +493,7 @@
                 removeBtn.textContent = 'X'; // Or a trash icon
                 removeBtn.addEventListener('click', () => {
                     delete plateQuantities[plateSize]; // Remove from inventory
+                    savePlateQuantities(); // Save on change
                     renderPlateSelectors(); // Re-render the list
                 });
                 controls.appendChild(removeBtn);
@@ -634,7 +674,8 @@
                 showMessageBox("Input Error", "Please enter a valid positive number for the new plate weight.");
                 return;
             }
-            // Check if plate already exists, if so, just increment quantity
+            // Check if plate already exists. If it does, just increment its count by 2.
+            // If not, add it with a count of 2.
             if (plateQuantities[newWeight] !== undefined) {
                 plateQuantities[newWeight] += 2; // Add 2 if it already exists, assuming adding a pair
             } else {
@@ -642,11 +683,13 @@
             }
             newPlateWeightInput.value = ''; // Clear input
             renderPlateSelectors(); // Re-render the list to include the new plate
+            savePlateQuantities(); // Save to localStorage after adding
         });
 
 
         // Initial rendering of plate selectors and calculation on load
         document.addEventListener('DOMContentLoaded', () => {
+            initializePlateQuantities(); // Load from localStorage or set defaults
             renderPlateSelectors();
             calculateBtn.click();
             // Optionally, expand the section by default on load if desired:
@@ -656,4 +699,3 @@
     </script>
 </body>
 </html>
-
